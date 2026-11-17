@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Kasir POS</title>
+    
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/modal.css">
+    <link rel="stylesheet" href="/css/login.css">
+</head>
+<body>
+
+    <!-- HALAMAN LOGIN -->
+    <div id="login-screen" class="screen active">
+        <div class="login-box">
+            <h2>POS <span class="text-blue">Sistem</span></h2>
+            <p class="subtitle">Silakan login untuk melanjutkan</p>
+            
+            <div class="input-group">
+                <label for="username">Username</label>
+                <input type="text" id="username">
+            </div>
+
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password">
+            </div>
+
+            <button onclick="login()">Masuk</button>
+            <p id="login-error" style="color: red; display: none;">Pasword salah!</p>
+            <p style="margin-top: 15px; font-size: 13px;">
+                <a href="#" onclick="lupaPassword()" style="color: #2563eb; text-decoration: none;">Lupa Password?</a>
+            </p>
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #d1d5db;">
+           <button type="button" onclick="loginTamu()" style="background: #16a34a; margin-top: 0;">👁️ Masuk sebagai Tamu</button>
+            <div class="login-hint">
+                <p>Selamat datang di pos Sistem Selamat bertugas.
+                    Jika Terjadi kesalahan harap hubungi Administrator
+                    risqullahariffikri@gmail.com
+                </p>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- DASHBOARD UTAMA -->
+    <div id="dashboard-screen" class="screen">
+        <!-- Sidebar Kiri -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>POS <span class="text-blue">APP</span></h2>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <!-- Tambahkan parameter nama header di switchTab -->
+                <button id="nav-penjualan" class="nav-btn active" onclick="switchTab('penjualan', 'Menu Penjualan')">🛒 Penjualan</button>
+                <button id="nav-stok" class="nav-btn" onclick="switchTab('stok', 'Manajemen Stok')">📦 Stok Barang</button>
+                <button id="nav-riwayat" class="nav-btn" onclick="switchTab('riwayat', 'Riwayat Transaksi')">🕒 Riwayat</button>
+                <button id="nav-pelanggan" class="nav-btn" onclick="switchTab('pelanggan', 'Data Pelanggan')">👥 Pelanggan</button>
+            </nav>
+        </aside>
+
+        <!-- Konten Utama Kanan -->
+        <main class="content">
+            <!-- Header Biru Atas -->
+            <!-- Header Biru Atas -->
+            <header class="content-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 id="header-title">Menu Penjualan</h2>
+                
+                <!-- Area Kanan: Nama User & Menu -->
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    
+                    <!-- Ini tulisan nama yang dipindah ke atas (tanpa "Login sebagai") -->
+                    <span id="user-info-name" style="font-weight: bold; font-size: 15px;">Administrator</span>
+                    
+                    <!-- Menu Titik Tiga (Pengaturan & Logout) -->
+                    <div id="menu-pengaturan-container" style="position: relative;">
+                        <button onclick="toggleHeaderMenu()" style="background: transparent; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0 10px;">⋮</button>
+                        
+                        <div id="header-dropdown" class="header-dropdown" style="display: none;">
+                            <!-- Tambahkan id="menu-pengaturan-link" -->
+                            <a id="menu-pengaturan-link" href="#" onclick="switchTab('pengaturan', 'Pengaturan Profil'); toggleHeaderMenu(); return false;">⚙️ Pengaturan Profil</a>
+                            
+                            <!-- Tambahkan id="menu-pengaturan-garis" -->
+                            <hr id="menu-pengaturan-garis" style="border: 0; border-top: 1px solid #e5e7eb; margin: 5px 0;">
+                            
+                            <a href="#" onclick="logout(); return false;" style="color: #dc2626;">🚪 Logout</a>
+                        </div>
+                    </div>
+                    
+                </div>
+            </header>
+            <div class="content-body">
+                <!-- TAB PENJUALAN -->
+                <section id="tab-penjualan" class="tab-content active">
+                    <div class="penjualan-container">
+                        <!-- Kiri: Katalog Produk -->
+                        <div class="katalog-section">
+                            <input type="text" id="search-item" class="form-input" placeholder="Cari barang...">
+                            
+                            <!-- Tempat Kartu Produk akan di-render dari JS -->
+                            <div id="katalog-produk" class="produk-grid">
+                                <!-- Contoh Kartu (Nanti diganti lewat JS) -->
+                                <div class="produk-card">
+                                    <h4>Celana Jeans</h4>
+                                    <p class="stok-text">Stok: <strong>14</strong></p>
+                                    <div class="card-bottom">
+                                        <span class="harga-text">Rp 150.000</span>
+                                        <button class="btn-tambah">Tambah</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Kanan: Keranjang & Pembayaran -->
+                        <div class="keranjang-section">
+                            <div class="form-group">
+                                <label>Nama Pelanggan</label>
+                                <input type="text" id="nama-pelanggan" class="form-input" placeholder="Ketik atau pilih pelanggan..." value="Umum" autocomplete="off">
+                                
+                                <!-- KOTAK DROPDOWN KUSTOM BARU -->
+                                <div id="custom-dropdown-pelanggan" class="custom-dropdown"></div>
+                                
+                                <datalist id="datalist-pelanggan">
+                                    <option value="Umum">
+                                    </datalist>
+                            </div>
+                            
+                        <div id="keranjang-list" class="keranjang-items">
+                                <!-- Item keranjang akan masuk ke sini -->
+                            </div>
+
+                            <div class="pembayaran-box">
+                                <!-- OPSI TAMBAH JASA BISA DIKLIK -->
+                                <div class="form-group" style="border: 1px solid #d1d5db; padding: 12px; border-radius: 6px; margin-bottom: 20px; background-color: #f9fafb;">
+                                    <label style="cursor: pointer; color: #2563eb; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0;" onclick="toggleJasaForm()">
+                                        <span>➕ Tambah Jasa / Ongkos</span>
+                                        <span id="jasa-toggle-icon">▼</span>
+                                    </label>
+                                    
+                                    <!-- FORM JASA (Awalnya Tersembunyi) -->
+                                    <div id="form-jasa-container" style="display: none; margin-top: 15px;">
+                                        <div style="display: flex; gap: 10px; margin-bottom: 10px; position: relative;">
+                                            <!-- Input Nama Jasa -->
+                                            <input type="text" id="nama-jasa" class="form-input" placeholder="Cari / ketik jasa..." autocomplete="off" style="flex: 2; margin-bottom: 0;">
+                                            <!-- Kotak Dropdown Pencarian Jasa -->
+                                            <div id="custom-dropdown-jasa" class="custom-dropdown" style="top: 45px; width: 65%;"></div>
+                                            
+                                            <!-- Input Harga Jasa -->
+                                            <input type="number" id="harga-jasa" class="form-input" placeholder="Tarif Rp..." style="flex: 1; margin-bottom: 0;" min="0">
+                                        </div>
+                                        <button class="btn-primary" style="width: 100%; padding: 10px; font-size: 13px; background: #4b5563; border-radius: 6px;" onclick="tambahJasaKeKeranjang()">Tambahkan Jasa ke Keranjang</button>
+                                    </div>
+                                </div>
+
+                                <!-- Total Tagihan -->
+                                <div class="total-bar">
+                                    <span>Total Tagihan:</span>
+                                    <h2 id="total-harga">Rp 0</h2>
+                                </div>
+    
+    <div class="form-group">
+        <label>Metode Pembayaran</label>
+        <select id="metode-bayar" class="form-input">
+            <option value="cash">Cash (Tunai)</option>
+            <option value="debit">Kartu Debit</option>
+            <option value="qris">QRIS</option>
+        </select>
+    </div>
+    <button class="btn-bayar" onclick="bayar()">Bayar Sekarang</button>
+</div>
+                        
+                    </div>
+                </section>
+
+                <!-- TAB STOK -->
+                <section id="tab-stok" class="tab-content">
+                    <div class="card-container">
+                        <div class="stok-header-action">
+                            <input type="text" id="search-stok" class="form-input" placeholder="Cari stok barang..." style="max-width: 300px;">
+                            <!-- Tombol Import dan Tambah -->
+                            <div style="display: flex; gap: 10px;">
+                                <!-- Label ini berfungsi sebagai tombol untuk memicu input file -->
+                                <label for="import-csv" class="btn-primary" style="background: #16a34a; cursor: pointer; padding: 10px 15px; border-radius: 6px; font-weight: bold; color: white;">📥 Import Excel (CSV)</label>
+                                <input type="file" id="import-csv" accept=".csv" style="display: none;" onchange="importCSV(event)">
+                                
+                                <button class="btn-dark" onclick="bukaFormStok()">+ Tambah Barang</button>
+                            </div>
+                        </div>
+                        <table class="table-modern theme-blue">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nama Barang</th>
+                                    <th>Harga (Rp)</th>
+                                    <th>Stok</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stok-list"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- TAB RIWAYAT -->
+                <section id="tab-riwayat" class="tab-content">
+                    <div class="card-container">
+                        <!-- HEADER RIWAYAT: Judul, Filter, & Tombol Export -->
+                        <div class="stok-header-action" style="margin-bottom: 20px; flex-wrap: wrap;">
+                            <h3 style="margin: 0;">Riwayat Transaksi</h3>
+                            
+                            <div style="display: flex; gap: 10px;">
+                                <!-- Dropdown Filter Waktu -->
+                                <select id="filter-waktu" class="form-input" style="margin-bottom: 0; width: 150px;" onchange="renderRiwayat()">
+                                    <option value="semua">Semua Waktu</option>
+                                    <option value="hari_ini">Hari Ini</option>
+                                    <option value="minggu_ini">7 Hari Terakhir</option>
+                                    <option value="bulan_ini">Bulan Ini</option>
+                                </select>
+                                
+                                <!-- Tombol Export -->
+                                <button class="btn-primary" style="background: #16a34a;" onclick="exportRiwayatCSV()">📥 Export Data</button>
+                            </div>
+                        </div>
+
+                        <table class="table-modern theme-black">
+                            <thead>
+                                <tr>
+                                    <th>Waktu</th>
+                                    <th>Pelanggan</th>
+                                    <th>Barang Dibeli</th>
+                                    <th>Total (Rp)</th>
+                                    <th>Pembayaran</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="riwayat-list-table"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                        <!-- TAB PELANGGAN -->
+                <section id="tab-pelanggan" class="tab-content">
+                    <div class="card-container">
+                        <!-- Header Pelanggan: Pencarian dan Tombol Tambah -->
+                        <div class="stok-header-action" style="margin-bottom: 20px;">
+                            <input type="text" id="search-pelanggan" class="form-input" placeholder="Cari nama atau plat..." style="max-width: 300px; margin-bottom: 0;">
+                            <button class="btn-dark" onclick="bukaFormPelanggan()">+ Tambah Pelanggan</button>
+                        </div>
+
+                        <!-- TABEL FULL WIDTH -->
+                        <table class="table-modern theme-blue">
+                            <thead>
+                                <tr>
+                                    <th>Nama & Telp</th>
+                                    <th>Kendaraan (Plat)</th>
+                                    <th>Alamat</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pelanggan-list">
+                                <!-- Data pelanggan akan muncul di sini -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+               <!-- TAB PENGATURAN -->
+                <section id="tab-pengaturan" class="tab-content">
+                    <div style="display: flex; gap: 20px; align-items: flex-start;">
+                        
+                        <!-- KIRI: DAFTAR MENU PENGATURAN (Model Tabel/List) -->
+                        <div class="pengaturan-menu">
+                            <div class="set-menu-item active" onclick="switchSetTab('profil')">👤 Profil Akun</div>
+                            <div class="set-menu-item" onclick="switchSetTab('bengkel')">🏪 Informasi Bengkel</div>
+                            <div class="set-menu-item" onclick="switchSetTab('pengguna')">👥 Manajemen Pengguna</div>
+                        </div>
+
+                        <!-- KANAN: KONTEN PENGATURAN YANG BERUBAH-UBAH -->
+                        <div class="pengaturan-content" style="flex: 1;">
+                            
+                            <!-- SUB-TAB 1: PROFIL -->
+                            <div id="set-profil" class="set-content-item active card-container">
+                                <h3 style="margin-bottom: 20px; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px;">Pengaturan Profil Akun</h3>
+                                <div class="form-group"><label>Nama Profil</label><input type="text" id="ganti-nama" class="form-input"></div>
+                                <div class="form-group"><label>Username Login</label><input type="text" id="ganti-username" class="form-input"></div>
+                                <div class="form-group" style="margin-bottom: 5px;"><label>Password Baru</label><input type="password" id="ganti-password" class="form-input" placeholder="Kosongkan jika tidak ingin diubah"></div>
+                                <button class="btn-primary" style="width: 100%; margin-top: 15px;" onclick="simpanPengaturanProfil()">Simpan Profil</button>
+                            </div>
+
+                            <!-- SUB-TAB 2: BENGKEL -->
+                            <div id="set-bengkel" class="set-content-item card-container">
+                                <h3 style="margin-bottom: 20px; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px;">Informasi Bengkel & Struk</h3>
+                                <div class="form-group"><label>Nama Bengkel</label><input type="text" id="atur-toko-nama" class="form-input"></div>
+                                <div class="form-group"><label>Nomor Telepon / WA</label><input type="text" id="atur-toko-telp" class="form-input"></div>
+                                <div class="form-group"><label>Alamat Lengkap</label><textarea id="atur-toko-alamat" class="form-input" rows="2"></textarea></div>
+                                <div class="form-group"><label>Pesan Bawah Struk</label><input type="text" id="atur-toko-pesan" class="form-input"></div>
+                                <button class="btn-primary" style="width: 100%; background: #16a34a;" onclick="simpanPengaturanBengkel()">Simpan Informasi</button>
+                            </div>
+
+                           <!-- SUB-TAB 3: MANAJEMEN PENGGUNA -->
+                            <div id="set-pengguna" class="set-content-item card-container">
+                                <h3 style="margin-bottom: 20px; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px;">Kelola Akun Kasir & Admin</h3>
+                                
+                                <!-- Header Manajemen Pengguna: Pencarian dan Tombol Tambah -->
+                                <div class="stok-header-action" style="margin-bottom: 15px; display: flex; justify-content: space-between; gap: 10px;">
+                                    <input type="text" id="search-pengguna" class="form-input" placeholder="Cari nama atau username..." style="margin-bottom:0; max-width: 300px;">
+                                    <button class="btn-dark" onclick="bukaFormPengguna()">+ Tambah Akun</button>
+                                </div>
+
+                                <!-- TABEL PENGGUNA (Pastikan bagian ini ada) -->
+                                <table class="table-modern theme-black">
+                                    <thead>
+                                        <tr>
+                                            <th>Nama</th>
+                                            <th>Username</th>
+                                            <th>Password</th>
+                                            <th>Role</th>
+                                            <th>Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="list-pengguna">
+                                        <!-- Data akun akan dimunculkan oleh JavaScript di sini -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+    <!-- MODAL KONFIRMASI PEMBAYARAN -->
+    <div id="modal-konfirmasi-bayar" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-bottom: 15px; color: #2563eb; text-align: center;">Konfirmasi Pembayaran</h3>
+            
+            <!-- Area Ringkasan -->
+            <div style="background: #f9fafb; padding: 15px; border-radius: 6px; border: 1px solid #e5e7eb; margin-bottom: 20px; font-size: 14px;">
+                <p style="margin-bottom: 5px;"><strong>Pelanggan:</strong> <span id="konfirmasi-pelanggan"></span></p>
+                <p style="margin-bottom: 5px;"><strong>Metode:</strong> <span id="konfirmasi-metode"></span></p>
+                
+                <hr style="border: 0; border-top: 1px dashed #d1d5db; margin: 10px 0;">
+                
+                <!-- List Barang & Jasa -->
+                <div id="konfirmasi-barang" style="margin-bottom: 10px; max-height: 150px; overflow-y: auto;">
+                    <!-- Data barang akan masuk lewat JS -->
+                </div>
+                
+                <hr style="border: 0; border-top: 1px dashed #d1d5db; margin: 10px 0;">
+                
+                <p style="font-size: 18px; font-weight: bold; text-align: right; color: #10b981;">Total: <span id="konfirmasi-total"></span></p>
+            </div>
+            
+            <!-- Tombol Aksi -->
+            <div style="display: flex; justify-content: space-between; gap: 10px;">
+                <button class="btn-dark" style="flex: 1;" onclick="tutupKonfirmasiBayar()">Batal</button>
+                <button class="btn-primary" style="flex: 1; background: #10b981;" onclick="prosesBayar()">Cetak Struk</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TAMBAH STOK (POP-UP) -->
+    <div id="modal-stok" class="modal-overlay">
+        <div class="modal-box">
+            <!-- ID ditambahkan di sini -->
+            <h3 id="modal-stok-title" style="margin-bottom: 20px;">Tambah Stok Barang Baru</h3>
+            
+            <div class="form-group">
+                <label>Nama Barang</label>
+                <input type="text" id="modal-nama-barang" class="form-input" placeholder="Cth: Oli Mesin">
+            </div>
+            <div class="form-group">
+                <label>Harga Barang (Rp)</label>
+                <input type="number" id="modal-harga-barang" class="form-input" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label>Jumlah Stok</label>
+                <input type="number" id="modal-stok-barang" class="form-input" placeholder="0">
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px;">
+                <button class="btn-dark" onclick="tutupFormStok()">Batal</button>
+                <button id="btn-simpan-stok" class="btn-primary" onclick="simpanStok()">Simpan Barang</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT & PRINT RIWAYAT (POP-UP) -->
+    <div id="modal-riwayat" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-bottom: 20px;">Detail / Edit Transaksi</h3>
+            
+            <div class="form-group">
+                <label>Nama Pelanggan</label>
+                <input type="text" id="modal-riwayat-pelanggan" class="form-input">
+            </div>
+            
+            <div class="form-group">
+                <label>Metode Pembayaran</label>
+                <select id="modal-riwayat-metode" class="form-input">
+                    <option value="Cash">Cash (Tunai)</option>
+                    <option value="Debit">Kartu Debit</option>
+                    <option value="QRIS">QRIS</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Rincian Barang Dibeli</label>
+                <textarea id="modal-riwayat-barang" class="form-input" rows="4"></textarea>
+                <p style="font-size: 11px; color: #6b7280; margin-top: -10px; margin-bottom: 10px;">Anda bisa mengedit teks rincian di atas secara manual jika diperlukan.</p>
+            </div>
+            
+            <!-- Tombol Aksi -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px;">
+                <!-- Tombol Print Ulang Nota -->
+                <button class="btn-primary" style="background: #10b981;" onclick="printNota()">🖨️ Cetak Struk</button>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-dark" onclick="tutupFormRiwayat()">Batal</button>
+                    <button class="btn-primary" onclick="simpanRiwayat()">Simpan Edit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TAMBAH/EDIT PELANGGAN (POP-UP) -->
+    <div id="modal-pelanggan" class="modal-overlay">
+        <div class="modal-box">
+            <h3 id="modal-pelanggan-title" style="margin-bottom: 20px;">Tambah Pelanggan Baru</h3>
+            
+            <div class="form-group">
+                <label>Nama Pelanggan</label>
+                <input type="text" id="pel-nama" class="form-input" placeholder="Cth: Budi Sutrisno">
+            </div>
+            <div class="form-group">
+                <label>No. Telpon / WA</label>
+                <input type="text" id="pel-telp" class="form-input" placeholder="Cth: 08123456789">
+            </div>
+            <div class="form-group">
+                <label>Jenis Motor</label>
+                <input type="text" id="pel-motor" class="form-input" placeholder="Cth: Honda Vario 150">
+            </div>
+            <div class="form-group">
+                <label>Plat Nomor</label>
+                <input type="text" id="pel-plat" class="form-input" placeholder="Cth: B 1234 ABC">
+            </div>
+            <div class="form-group">
+                <label>Alamat</label>
+                <textarea id="pel-alamat" class="form-input" placeholder="Alamat lengkap..." rows="2"></textarea>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px;">
+                <button class="btn-dark" onclick="tutupFormPelanggan()">Batal</button>
+                <button id="btn-simpan-pel" class="btn-primary" onclick="tambahPelanggan()">Simpan Pelanggan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ... (Kode-kode Modal Pop-up di atasnya) ... -->
+    <!-- MODAL KONFIRMASI HAPUS (POP-UP CUSTOM) -->
+    <div id="modal-konfirmasi" class="modal-overlay">
+        <div class="modal-box" style="text-align: center; max-width: 350px;">
+            <div style="font-size: 40px; margin-bottom: 10px;">⚠️</div>
+            <h3 style="margin-bottom: 10px; color: #dc2626;">Konfirmasi Hapus</h3>
+            <p id="teks-konfirmasi" style="margin-bottom: 25px; color: #4b5563; font-size: 14px;">Apakah Anda yakin ingin menghapus data ini?</p>
+            
+            <div style="display: flex; justify-content: center; gap: 10px;">
+                <button class="btn-dark" onclick="tutupKonfirmasi()">Batal</button>
+                <button id="btn-eksekusi-hapus" class="btn-primary" style="background: #dc2626;">Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TAMBAH PENGGUNA (POP-UP) -->
+    <div id="modal-pengguna" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-bottom: 20px;">Tambah Pengguna Baru</h3>
+            
+            <div class="form-group">
+                <label>Nama Pengguna</label>
+                <input type="text" id="modal-user-nama" class="form-input" placeholder="Cth: Kasir 2">
+            </div>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="modal-user-username" class="form-input" placeholder="Cth: kasir2">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <div style="position: relative;">
+                    <input type="password" id="modal-user-password" class="form-input" placeholder="••••••••" style="padding-right: 40px; margin-bottom: 0;">
+                    <!-- Tombol Ikon Mata -->
+                    <span id="toggle-password-icon" onclick="togglePasswordVisibility()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 16px; user-select: none;">👁️‍🗨️</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Role / Hak Akses</label>
+                <select id="modal-user-role" class="form-input">
+                    <option value="kasir">Kasir</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px;">
+                <button class="btn-dark" onclick="tutupFormPengguna()">Batal</button>
+                <button class="btn-primary" onclick="tambahPenggunaBaru()">Simpan Akun</button>
+            </div>
+        </div>
+    </div>
+    <!-- Panggil script secara modular -->
+    <script src="/js/auth.js"></script>
+    <script src="/js/ui.js"></script>
+    <!--fitur-->
+    <script src="/js/fitur/penjualan.js"></script>
+    <script src="/js/fitur/riwayat.js"></script>
+    <script src="/js/fitur/stock.js"></script>
+    <script src="/js/fitur/pelanggan.js"></script>
+    <script src="/js/fitur/pengaturan.js"></script>
+</body>
+</html>

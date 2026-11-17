@@ -1,0 +1,25 @@
+* {
+    margin: 0; padding: 0; box-sizing: border-box;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+html, body {
+    height: 100% !important;
+    overflow: hidden !important; 
+}
+body { 
+    background-color: #dadada; 
+    color: #333; 
+}
+.screen { 
+    display: none; 
+}
+.screen.active { 
+    display: flex; 
+    height: 100vh !important; 
+    max-height: 100vh !important;
+    background-color: #f3f4f6; 
+    overflow: hidden !important;
+}
+.text-blue {
+    color: #2563eb; 
+}

@@ -1,0 +1,59 @@
+/* LAYAR LOGIN KHUSUS */
+.login-box {
+    margin: auto; 
+    padding: 40px; 
+    background: #f0f0f0; 
+    color: #333;
+    border-radius: 8px; 
+    text-align: center; 
+    box-shadow: 0 4px 10px rgba(10, 10, 10, 0.1);
+    width: 400px; 
+    border-top: 8px solid #2563eb;
+}
+.login-box h2 { 
+    font-size: 28px; 
+    margin-bottom: 5px; 
+}
+.subtitle { 
+    color: #6b7280; 
+    margin-bottom: 30px; 
+    font-size: 14px; 
+}
+.input-group { 
+    text-align: left; 
+    margin-bottom: 15px; 
+}
+.input-group label { 
+    display: block; 
+    font-weight: bold; 
+    margin-bottom: 5px; 
+    font-size: 14px; 
+    color: #1f2937; 
+}
+.login-box input { 
+    display: block; 
+    width: 100%; 
+    padding: 10px; 
+    border: 1px solid #d1d5db;
+    border-radius: 6px; 
+    outline: none; 
+}
+.login-box button {
+    display: block; 
+    width: 100%; 
+    margin: 20px 0; 
+    padding: 12px;
+    background: #2563eb; 
+    color: white; 
+    border: none; 
+    cursor: pointer;
+    border-radius: 6px; 
+    font-weight: bold; 
+    font-size: 16px;
+}
+.login-hint { 
+    margin-top: 20px; 
+    color: #9ca3af; 
+    font-size: 12px; 
+    line-height: 1.5; 
+}
