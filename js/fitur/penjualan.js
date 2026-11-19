@@ -2,14 +2,25 @@
 
 let keranjang = [];
 let totalBelanja = 0;
-let biayaJasa = 0;
 
-// Tambahkan fungsi baru ini untuk mendeteksi pilihan jasa
+// Helper mengambil info toko terbaru dari Pengaturan Bengkel
+function ambilInfoToko() {
+    if (typeof dataToko !== 'undefined' && dataToko) {
+        return dataToko;
+    }
+    return JSON.parse(localStorage.getItem('pos_toko')) || {
+        nama: "BENGKEL MOTOR TRISNO",
+        telp: "0858-8265-7403",
+        alamat: "Jl. H. Salim kelapa dua, Depok",
+        pesan: "Terima Kasih Atas Kunjungan Anda!"
+    };
+}
+
 // Buka/Tutup menu Jasa
 function toggleJasaForm() {
     const container = document.getElementById('form-jasa-container');
     const icon = document.getElementById('jasa-toggle-icon');
-    if (container.style.display === 'none') {
+    if (container.style.display === 'none' || container.style.display === '') {
         container.style.display = 'block';
         icon.innerText = '▲';
     } else {
@@ -29,54 +40,28 @@ function tambahJasaKeKeranjang() {
         return alert('Masukkan nama jasa dan harga yang valid!');
     }
 
-    // Masukkan sebagai item ke keranjang (Beri penanda isJasa: true)
     keranjang.push({
-        id: 'JASA_' + Date.now(), // ID unik agar bisa nambah banyak jasa
+        id: 'JASA_' + Date.now(),
         nama: 'Jasa: ' + nama,
         harga: harga,
         qty: 1,
-        isJasa: true // Penanda bahwa ini bukan barang fisik
+        isJasa: true
     });
 
-    // Kosongkan form setelah ditambah
     namaInput.value = '';
     hargaInput.value = '';
     renderKeranjang();
 }
-// 2. GABUNGKAN BARANG & JASA SEBELUM DISIMPAN KE RIWAYAT
-    let keranjangFinal = [...keranjang];
-    
-    if (biayaJasa > 0) {
-        // Ambil teks dari input "Cari / ketik nama jasa..."
-        let inputNamaJasa = document.getElementById('nama-jasa').value.trim();
-        let namaJasaText = "Ongkos / Jasa Pasang";
-        
-        // Cek apakah user mengetik nama jasa secara manual
-        if (inputNamaJasa !== "") {
-            namaJasaText = "Jasa: " + inputNamaJasa;
-        } else {
-            // Jika dikosongkan, coba ambil dari pilihan dropdown (jika dipakai)
-            const selectJasa = document.getElementById('pilih-jasa');
-            if (selectJasa && selectJasa.value !== 'manual' && selectJasa.value !== '0') {
-                namaJasaText = "Jasa " + selectJasa.options[selectJasa.selectedIndex].text.split(' (')[0]; 
-            }
-        }
-        
-        // Masukkan jasa sebagai "barang" ke struk
-        keranjangFinal.push({
-            id: 'JASA', 
-            nama: namaJasaText, 
-            harga: biayaJasa, 
-            qty: 1
-        });
-    }
+
 // Render Kartu Katalog
 function renderKatalog(keyword = '') {
     const grid = document.getElementById('katalog-produk');
     if (!grid) return;
     grid.innerHTML = '';
 
-    const hasilCari = dataStok.filter(item => item.nama.toLowerCase().includes(keyword.toLowerCase()));
+    const hasilCari = dataStok.filter(item =>
+        item.nama.toLowerCase().includes(keyword.toLowerCase())
+    );
 
     hasilCari.forEach(item => {
         grid.innerHTML += `
@@ -92,16 +77,16 @@ function renderKatalog(keyword = '') {
     });
 }
 
-// Fitur Pencarian
+// Fitur Pencarian Katalog
 document.getElementById('search-item')?.addEventListener('input', function(e) {
     renderKatalog(e.target.value);
 });
 
 function tambahKeKeranjang(id) {
-    const item = dataStok.find(s => s.id === id);
+    const item = dataStok.find(s => String(s.id) === String(id));
     if (!item || item.stok <= 0) return alert('Stok barang habis!');
 
-    const existing = keranjang.find(k => k.id === id);
+    const existing = keranjang.find(k => String(k.id) === String(id));
     if (existing) {
         if (existing.qty >= item.stok) return alert('Stok tidak mencukupi!');
         existing.qty += 1;
@@ -111,16 +96,15 @@ function tambahKeKeranjang(id) {
     renderKeranjang();
 }
 
-// Fungsi tombol [-] dan [+]
+// Fungsi tombol [-] dan [+] (sudah aman untuk ID angka maupun string jasa)
 function ubahQty(id, delta) {
-    const item = keranjang.find(k => k.id === id);
-    
+    const item = keranjang.find(k => String(k.id) === String(id));
+
     if (item) {
         item.qty += delta;
-        
-        // Pengecekan stok HANYA JIKA BUKAN JASA
+
         if (!item.isJasa) {
-            const stokItem = dataStok.find(s => s.id === id);
+            const stokItem = dataStok.find(s => String(s.id) === String(id));
             if (stokItem && item.qty > stokItem.stok) {
                 item.qty = stokItem.stok;
                 alert('Melebihi batas stok yang tersedia!');
@@ -128,7 +112,7 @@ function ubahQty(id, delta) {
         }
 
         if (item.qty <= 0) {
-            keranjang = keranjang.filter(k => k.id !== id);
+            keranjang = keranjang.filter(k => String(k.id) !== String(id));
         }
     }
     renderKeranjang();
@@ -159,70 +143,76 @@ function renderKeranjang() {
             </div>
         `;
     });
-    
+
     document.getElementById('total-harga').innerText = 'Rp ' + totalBelanja.toLocaleString('id-ID');
+    // Update tombol melayang keranjang versi HP
+    const totalItem = keranjang.reduce((acc, item) => acc + item.qty, 0);
+    const mobileCount = document.getElementById('mobile-cart-count');
+    const mobileTotal = document.getElementById('mobile-cart-total');
+    if (mobileCount) mobileCount.innerText = `${totalItem} Item`;
+    if (mobileTotal) mobileTotal.innerText = 'Rp ' + totalBelanja.toLocaleString('id-ID');
 }
 
 // ========================================================
 // FUNGSI BAYAR & PRINT OTOMATIS
 // ========================================================
-// 1. Fungsi yang HANYA memunculkan pop-up konfirmasi
 function bayar() {
-    const namaPelanggan = document.getElementById('nama-pelanggan').value || 'Umum';
+    const namaPelanggan = document.getElementById('nama-pelanggan').value.trim() || 'Umum';
     const metodeSelect = document.getElementById('metode-bayar');
     const metodeBayar = metodeSelect.options[metodeSelect.selectedIndex].text;
 
     if (keranjang.length === 0) return alert('Keranjang dan Jasa masih kosong!');
 
-    // Masukkan data pelanggan & metode ke pop-up
     document.getElementById('konfirmasi-pelanggan').innerText = namaPelanggan;
     document.getElementById('konfirmasi-metode').innerText = metodeBayar;
-    
-    // Susun list barang dan jasa untuk di pop-up
-    const listBarangHTML = keranjang.map(item => {
-        return `<div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                    <span>${item.nama} (x${item.qty})</span>
-                    <span style="font-weight: bold;">Rp ${(item.harga * item.qty).toLocaleString('id-ID')}</span>
-                </div>`;
-    }).join('');
-    
+
+    const listBarangHTML = keranjang.map(item => `
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span>${item.nama} (x${item.qty})</span>
+            <span style="font-weight: bold;">Rp ${(item.harga * item.qty).toLocaleString('id-ID')}</span>
+        </div>
+    `).join('');
+
     document.getElementById('konfirmasi-barang').innerHTML = listBarangHTML;
     document.getElementById('konfirmasi-total').innerText = 'Rp ' + totalBelanja.toLocaleString('id-ID');
 
-    // Tampilkan pop-up modal
     document.getElementById('modal-konfirmasi-bayar').classList.add('show');
 }
 
-// 2. Fungsi untuk menutup pop-up
 function tutupKonfirmasiBayar() {
     document.getElementById('modal-konfirmasi-bayar').classList.remove('show');
 }
 
-// 3. Fungsi asli yang mengeksekusi stok, riwayat, dan print nota (Dipanggil dari dalam pop-up)
 function prosesBayar() {
-    const namaPelanggan = document.getElementById('nama-pelanggan').value || 'Umum';
+    const namaPelanggan = document.getElementById('nama-pelanggan').value.trim() || 'Umum';
     const metodeSelect = document.getElementById('metode-bayar');
     const metodeBayar = metodeSelect.options[metodeSelect.selectedIndex].text;
+    const namaKasir = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.name : 'Admin';
 
-    // Kurangi stok di database lokal (Kecuali Jasa)
+// Kurangi stok barang fisik & update ke Firestore
     keranjang.forEach(itemBeli => {
-        if (!itemBeli.isJasa) { 
-            const stokItem = dataStok.find(s => s.id === itemBeli.id);
-            if (stokItem) stokItem.stok -= itemBeli.qty;
+        if (!itemBeli.isJasa) {
+            const stokItem = dataStok.find(s => String(s.id) === String(itemBeli.id));
+            if (stokItem) {
+                stokItem.stok -= itemBeli.qty;
+                if (typeof simpanDokumenFirestore === 'function') {
+                    simpanDokumenFirestore('pos_stok', stokItem);
+                }
+            }
         }
     });
 
     if (typeof simpanStokKeMemori === 'function') simpanStokKeMemori();
 
-    // Simpan ke Riwayat Transaksi 
     if (typeof tambahRiwayat === "function") {
-        tambahRiwayat(namaPelanggan, metodeBayar, keranjang, totalBelanja);
+        tambahRiwayat(namaPelanggan, metodeBayar, keranjang, totalBelanja, namaKasir);
     }
 
-    // SUSUN STRUK HTML
     const trxTerakhir = dataRiwayat[dataRiwayat.length - 1];
-    const teksBarang = trxTerakhir.items.map(i => `${i.nama} (x${i.qty}) = Rp ${(i.harga * i.qty).toLocaleString('id-ID')}`).join('<br>');
-    const namaKasir = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.name : 'Admin';
+    const toko = ambilInfoToko();
+    const teksBarang = trxTerakhir.items
+        .map(i => `${i.nama} (x${i.qty}) = Rp ${(i.harga * i.qty).toLocaleString('id-ID')}`)
+        .join('<br>');
 
     const strukHTML = `
         <html>
@@ -238,17 +228,15 @@ function prosesBayar() {
             </style>
         </head>
         <body>
-            <h2>BENGKEL MOTOR TRISNO</h2>
-            <p>Jl. H. Salim kelapa dua, Depok<br>Telp: 0858-8265-7403</p>
+            <h2>${toko.nama}</h2>
+            <p>${toko.alamat}<br>Telp: ${toko.telp}</p>
             <hr>
-            <div>Waktu   : ${trxTerakhir.tanggal}</div>
-            <div>No. Trx : TRX-${trxTerakhir.id}</div>
+            <div>Waktu    : ${trxTerakhir.tanggal}</div>
+            <div>No. Trx  : TRX-${trxTerakhir.id}</div>
             <div>Pelanggan: ${trxTerakhir.pelanggan}</div>
-            <div>Kasir   : ${namaKasir}</div>
+            <div>Kasir    : ${trxTerakhir.kasir || namaKasir}</div>
             <hr>
-            <div style="margin-bottom: 10px;">
-                ${teksBarang}
-            </div>
+            <div style="margin-bottom: 10px;">${teksBarang}</div>
             <hr>
             <div class="flex bold">
                 <span>TOTAL:</span>
@@ -259,7 +247,7 @@ function prosesBayar() {
                 <span>${trxTerakhir.metode}</span>
             </div>
             <hr>
-            <p style="margin-top: 15px;">Terima Kasih Atas Kunjungan Anda!</p>
+            <p style="margin-top: 15px;">${toko.pesan}</p>
             <script>
                 window.onload = function() { window.print(); window.close(); }
             </script>
@@ -267,23 +255,22 @@ function prosesBayar() {
         </html>
     `;
 
-    // Buka Jendela Print
     const printWindow = window.open('', '_blank', 'width=400,height=600');
-    printWindow.document.write(strukHTML);
-    printWindow.document.close();
+    if (printWindow) {
+        printWindow.document.write(strukHTML);
+        printWindow.document.close();
+    }
 
-    // RESET FORM PENJUALAN
     keranjang = [];
-    document.getElementById('nama-pelanggan').value = '';
-    
+    document.getElementById('nama-pelanggan').value = 'Umum';
+
     renderKeranjang();
-    if (typeof renderStok === "function") renderStok(); 
-    
-    // Tutup pop-up konfirmasi
+    if (typeof renderStok === "function") renderStok();
     tutupKonfirmasiBayar();
+    if (typeof toggleKeranjangMobile === 'function') toggleKeranjangMobile(false);
 }
 
-    // Daftar harga jasa tetap bengkel
+// Daftar harga jasa tetap bengkel
 const masterJasa = [
     { nama: "Ganti Oli", harga: 15000 },
     { nama: "Servis Ringan", harga: 25000 },
@@ -294,14 +281,13 @@ const masterJasa = [
 
 function setupAutocompleteJasa() {
     const inputNama = document.getElementById('nama-jasa');
-    const inputHarga = document.getElementById('harga-jasa');
     const dropdownEl = document.getElementById('custom-dropdown-jasa');
     if (!inputNama || !dropdownEl) return;
 
     function renderList(keyword = '') {
         dropdownEl.innerHTML = '';
-        
-        const hasilCari = masterJasa.filter(j => 
+
+        const hasilCari = masterJasa.filter(j =>
             j.nama.toLowerCase().includes(keyword.toLowerCase())
         );
 
@@ -309,8 +295,7 @@ function setupAutocompleteJasa() {
             const div = document.createElement('div');
             div.className = 'custom-dropdown-item';
             div.innerText = `${j.nama} - Rp ${j.harga.toLocaleString('id-ID')}`;
-            
-            // Jika diklik, isi otomatis form nama & harga
+
             div.onclick = function() {
                 document.getElementById('nama-jasa').value = j.nama;
                 document.getElementById('harga-jasa').value = j.harga;
@@ -322,29 +307,19 @@ function setupAutocompleteJasa() {
         dropdownEl.style.display = hasilCari.length > 0 ? 'block' : 'none';
     }
 
-    // Hindari event listener bertumpuk dengan cloneNode
-    const newTarget = inputNama.cloneNode(true);
-    inputNama.parentNode.replaceChild(newTarget, inputNama);
+    inputNama.addEventListener('input', function(e) { renderList(e.target.value); });
+    inputNama.addEventListener('focus', function(e) { renderList(e.target.value); });
 
-    newTarget.addEventListener('input', function(e) { renderList(e.target.value); });
-    newTarget.addEventListener('focus', function(e) { renderList(e.target.value); });
-    
     document.addEventListener('click', function(e) {
-        if (!newTarget.contains(e.target) && !dropdownEl.contains(e.target)) {
+        if (!inputNama.contains(e.target) && !dropdownEl.contains(e.target)) {
             dropdownEl.style.display = 'none';
         }
     });
 }
 
-function hitungJasa() {
-    const inputHarga = document.getElementById('harga-jasa');
-    biayaJasa = parseInt(inputHarga.value) || 0;
-    renderKeranjang(); // Update total tagihan
-}
-// Inisialisasi awal saat web dibuka
-window.onload = () => {
+// Inisialisasi awal tanpa menimpa window.onload milik file lain
+window.addEventListener('load', () => {
     if (typeof renderStok === "function") renderStok();
     if (typeof renderRiwayat === "function") renderRiwayat();
-    // Aktifkan pencarian jasa
     setupAutocompleteJasa();
-};
+});

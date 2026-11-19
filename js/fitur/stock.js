@@ -1,15 +1,8 @@
-// stok.js
+// js/fitur/stock.js
 
-// AMBIL DATA DARI MEMORI, JIKA KOSONG GUNAKAN DATA DEFAULT
-let dataStok = JSON.parse(localStorage.getItem('pos_stok')) || [
-    { id: 2, nama: "Celana Jeans", harga: 150000, stok: 14 },
-    { id: 3, nama: "Topi Biru", harga: 35000, stok: 50 },
-    { id: 4, nama: "Sepatu Kets Putih", harga: 250000, stok: 10 }
-];
+let dataStok = JSON.parse(localStorage.getItem('pos_stok')) || [];
+let idStokDiedit = null;
 
-let idStokDiedit = null; 
-
-// FUNGSI BARU: Simpan Permanen
 function simpanStokKeMemori() {
     localStorage.setItem('pos_stok', JSON.stringify(dataStok));
 }
@@ -18,14 +11,16 @@ function renderStok(keyword = '') {
     const tbody = document.getElementById('stok-list');
     if (!tbody) return;
     tbody.innerHTML = '';
-    
-    const hasilCari = dataStok.filter(item => item.nama.toLowerCase().includes(keyword.toLowerCase()));
+
+    const hasilCari = dataStok.filter(item =>
+        item.nama.toLowerCase().includes(keyword.toLowerCase())
+    );
 
     if (hasilCari.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px;">Barang tidak ditemukan.</td></tr>`;
     } else {
         hasilCari.forEach((item) => {
-            let aksiHTML = `
+            const aksiHTML = `
                 <span onclick="editStok(${item.id})" style="color: #2563eb; cursor: pointer; font-weight: bold; margin-right: 15px;">Edit</span>
                 <span onclick="hapusStok(${item.id})" style="color: #dc2626; cursor: pointer; font-weight: bold;">Hapus</span>
             `;
@@ -41,51 +36,44 @@ function renderStok(keyword = '') {
         });
     }
 
-    if (typeof renderKatalog === 'function') renderKatalog();
+    if (typeof renderKatalog === 'function') {
+        const kwKatalog = document.getElementById('search-item')?.value || '';
+        renderKatalog(kwKatalog);
+    }
 }
 
 document.getElementById('search-stok')?.addEventListener('input', function(e) {
     renderStok(e.target.value);
 });
 
-// FUNGSI BARU: IMPORT DARI EXCEL (CSV)
 function importCSV(event) {
     const file = event.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = function(e) {
-        // Hapus karakter carriage return (\r) bawaan Windows agar tidak error
-        const text = e.target.result.replace(/\r/g, ''); 
-        const baris = text.split('\n'); 
-
+        const text = e.target.result.replace(/\r/g, '');
+        const baris = text.split('\n');
         let jumlahBerhasil = 0;
 
         for (let i = 1; i < baris.length; i++) {
-            if (baris[i].trim() === '') continue; // Lewati baris yang kosong
+            if (baris[i].trim() === '') continue;
 
-            // Coba pisahkan dengan koma terlebih dahulu
             let kolom = baris[i].split(',');
-            
-            // Jika hasilnya kurang dari 3 kolom, berarti Excel menggunakan titik koma (;)
-            if (kolom.length < 3) {
-                kolom = baris[i].split(';'); 
-            }
-            
+            if (kolom.length < 3) kolom = baris[i].split(';');
+
             if (kolom.length >= 3) {
                 const nama = kolom[0].trim();
-                
-                // Bersihkan karakter selain angka (berjaga-jaga jika terketik 'Rp' atau titik)
-                const hargaBersih = kolom[1].replace(/[^0-9]/g, '');
-                const stokBersih = kolom[2].replace(/[^0-9]/g, '');
-                
-                const harga = parseInt(hargaBersih);
-                const stok = parseInt(stokBersih);
+                const harga = parseInt(kolom[1].replace(/[^0-9]/g, ''));
+                const stok = parseInt(kolom[2].replace(/[^0-9]/g, ''));
 
-                // Validasi agar nama tidak kosong dan harga/stok adalah angka valid
                 if (nama !== '' && !isNaN(harga) && !isNaN(stok)) {
-                    const newId = dataStok.length > 0 ? Math.max(...dataStok.map(s => s.id)) + 1 : 1;
-                    dataStok.push({ id: newId, nama, harga, stok });
+                    const newId = dataStok.length > 0 ? Math.max(...dataStok.map(s => Number(s.id))) + 1 : 1;
+                    const barangBaru = { id: newId, nama, harga, stok };
+                    dataStok.push(barangBaru);
+                    if (typeof simpanDokumenFirestore === 'function') {
+                        simpanDokumenFirestore('pos_stok', barangBaru);
+                    }
                     jumlahBerhasil++;
                 }
             }
@@ -94,36 +82,33 @@ function importCSV(event) {
         if (jumlahBerhasil > 0) {
             simpanStokKeMemori();
             renderStok();
-            alert(`Sukses! ${jumlahBerhasil} barang baru berhasil di-import dari Excel.`);
+            alert(`Sukses! ${jumlahBerhasil} barang baru berhasil di-import.`);
         } else {
-            alert("Gagal mengimpor. Pastikan baris data Anda memiliki 3 kolom: Nama Barang, Harga, dan Stok.");
+            alert("Gagal mengimpor. Pastikan baris data memiliki 3 kolom: Nama Barang, Harga, dan Stok.");
         }
-        
-        // Reset input agar pengguna bisa mengunggah ulang file yang sama jika ada revisi
-        event.target.value = ''; 
+        event.target.value = '';
     };
     reader.readAsText(file);
 }
 
-// BUKA MODAL, EDIT, TUTUP MODAL SAMA
 function bukaFormStok() {
-    idStokDiedit = null; 
+    idStokDiedit = null;
     document.getElementById('modal-stok-title').innerText = "Tambah Stok Barang Baru";
     document.getElementById('btn-simpan-stok').innerText = "Simpan Barang";
-    document.getElementById('btn-simpan-stok').style.background = "#2563eb"; 
+    document.getElementById('btn-simpan-stok').style.background = "#2563eb";
     document.getElementById('modal-stok').classList.add('show');
 }
 
 function editStok(id) {
-    const item = dataStok.find(s => s.id === id);
+    const item = dataStok.find(s => Number(s.id) === Number(id));
     if (!item) return;
-    idStokDiedit = id; 
+    idStokDiedit = item.id;
     document.getElementById('modal-nama-barang').value = item.nama;
     document.getElementById('modal-harga-barang').value = item.harga;
     document.getElementById('modal-stok-barang').value = item.stok;
     document.getElementById('modal-stok-title').innerText = "Edit Data Stok Barang";
     document.getElementById('btn-simpan-stok').innerText = "Update Barang";
-    document.getElementById('btn-simpan-stok').style.background = "#16a34a"; 
+    document.getElementById('btn-simpan-stok').style.background = "#16a34a";
     document.getElementById('modal-stok').classList.add('show');
 }
 
@@ -132,11 +117,11 @@ function tutupFormStok() {
     document.getElementById('modal-nama-barang').value = '';
     document.getElementById('modal-harga-barang').value = '';
     document.getElementById('modal-stok-barang').value = '';
-    idStokDiedit = null; 
+    idStokDiedit = null;
 }
 
 function simpanStok() {
-    const nama = document.getElementById('modal-nama-barang').value;
+    const nama = document.getElementById('modal-nama-barang').value.trim();
     const harga = parseInt(document.getElementById('modal-harga-barang').value);
     const stok = parseInt(document.getElementById('modal-stok-barang').value);
 
@@ -145,24 +130,39 @@ function simpanStok() {
         return;
     }
 
-    if (idStokDiedit) {
-        const item = dataStok.find(s => s.id === idStokDiedit);
-        if (item) { item.nama = nama; item.harga = harga; item.stok = stok; }
+    let itemTersimpan = null;
+
+    if (idStokDiedit !== null) {
+        const item = dataStok.find(s => Number(s.id) === Number(idStokDiedit));
+        if (item) {
+            item.nama = nama;
+            item.harga = harga;
+            item.stok = stok;
+            itemTersimpan = item;
+        }
     } else {
-        const newId = dataStok.length > 0 ? Math.max(...dataStok.map(s => s.id)) + 1 : 1;
-        dataStok.push({ id: newId, nama, harga, stok });
+        const newId = dataStok.length > 0 ? Math.max(...dataStok.map(s => Number(s.id))) + 1 : 1;
+        itemTersimpan = { id: newId, nama, harga, stok };
+        dataStok.push(itemTersimpan);
     }
 
-    simpanStokKeMemori(); // SIMPAN PERMANEN
+    simpanStokKeMemori();
+    if (typeof simpanDokumenFirestore === 'function' && itemTersimpan) {
+        simpanDokumenFirestore('pos_stok', itemTersimpan);
+    }
+
     document.getElementById('search-stok').value = '';
-    renderStok();       
-    tutupFormStok();    
+    renderStok();
+    tutupFormStok();
 }
 
 function hapusStok(id) {
     tampilkanKonfirmasi('Yakin ingin menghapus barang ini?', function() {
-        dataStok = dataStok.filter(item => item.id !== id);
-        simpanStokKeMemori(); // SIMPAN PERMANEN
+        dataStok = dataStok.filter(item => Number(item.id) !== Number(id));
+        simpanStokKeMemori();
+        if (typeof hapusDokumenFirestore === 'function') {
+            hapusDokumenFirestore('pos_stok', id);
+        }
         const keyword = document.getElementById('search-stok')?.value || '';
         renderStok(keyword);
     });

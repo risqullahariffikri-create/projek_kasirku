@@ -1,0 +1,416 @@
+/* css/responsive.css */
+
+/* Perbaikan tinggi layar khusus browser HP (Safari iOS / Chrome Android) */
+html, body {
+    height: 100dvh !important;
+}
+.screen.active {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+}
+
+/* Pastikan modal selalu di atas drawer keranjang & sidebar */
+.modal-overlay {
+    z-index: 2000 !important;
+}
+.header-dropdown {
+    z-index: 1100 !important;
+}
+
+/* ==========================================
+   SIDEBAR COLLAPSIBLE (DESKTOP & MOBILE)
+   ========================================== */
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 15px;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.btn-toggle-sidebar {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 22px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.btn-toggle-sidebar:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.sidebar-brand {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.nav-btn {
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+}
+.nav-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+    width: 24px;
+    text-align: center;
+}
+.nav-text {
+    transition: opacity 0.2s ease;
+}
+
+/* Mode Ramping di Desktop (opsional jika tombol ☰ diklik di laptop) */
+.sidebar.collapsed {
+    width: 68px !important;
+    min-width: 68px !important;
+}
+.sidebar.collapsed .sidebar-brand,
+.sidebar.collapsed .nav-text {
+    display: none !important;
+}
+.sidebar.collapsed .sidebar-header {
+    justify-content: center;
+    padding: 18px 8px;
+}
+.sidebar.collapsed .nav-btn {
+    justify-content: center;
+    padding: 12px 0 !important;
+}
+
+/* Backdrop gelap (hanya aktif saat sidebar dibuka di HP) */
+.sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 998;
+}
+.sidebar-backdrop.show {
+    display: block;
+}
+
+/* Wrapper scroll tabel */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Layout Tab Pengaturan */
+.pengaturan-layout {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+/* Elemen khusus HP (sembunyi di Desktop) */
+.mobile-cart-bar,
+.mobile-cart-header {
+    display: none;
+}
+
+/* ==========================================
+   TAMPILAN HP / MOBILE (Layar <= 768px)
+   ========================================== */
+@media (max-width: 768px) {
+    /* 1. MINI-SIDEBAR RAMPING DI KIRI (DEFAULT IKON SAJA) */
+    .sidebar {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 58px !important;
+        min-width: 58px !important;
+        z-index: 999;
+        transition: width 0.25s ease;
+        overflow-x: hidden;
+        padding: 10px 6px !important;
+    }
+
+    .sidebar .sidebar-header {
+        justify-content: center;
+        padding: 10px 0 18px 0 !important;
+    }
+
+    .sidebar .sidebar-brand,
+    .sidebar .nav-text {
+        display: none !important;
+    }
+
+    .sidebar .nav-btn {
+        justify-content: center;
+        padding: 12px 0 !important;
+        margin-bottom: 10px !important;
+    }
+
+    /* SAAT TOMBOL ☰ DIKLIK -> SIDEBAR MELEBAR (OVERLAY) */
+    .sidebar.mobile-open {
+        width: 220px !important;
+        min-width: 220px !important;
+        padding: 10px 14px !important;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .sidebar.mobile-open .sidebar-header {
+        justify-content: flex-start;
+        padding: 10px 4px 18px 4px !important;
+    }
+
+    .sidebar.mobile-open .sidebar-brand,
+    .sidebar.mobile-open .nav-text {
+        display: inline-block !important;
+    }
+
+    .sidebar.mobile-open .nav-btn {
+        justify-content: flex-start;
+        padding: 12px 14px !important;
+    }
+
+    /* 2. KONTEN UTAMA DI KANAN MINI-SIDEBAR */
+    .content {
+        margin-left: 58px !important;
+        width: calc(100% - 58px) !important;
+        min-width: 0;
+        height: 100dvh !important;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .content-header {
+        padding: 12px 14px !important;
+        flex-shrink: 0;
+    }
+
+    #header-title {
+        font-size: 16px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    #user-info-name {
+        font-size: 12px !important;
+        max-width: 85px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .content-body {
+        padding: 12px !important;
+        flex: 1;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .card-container {
+        padding: 14px !important;
+    }
+
+    /* Cegah auto-zoom pada input di HP */
+    input, select, textarea, .form-input {
+        font-size: 16px !important;
+    }
+
+    /* 3. TAB PENJUALAN: KATALOG 2 KOLOM + FLOATING KERANJANG */
+    .penjualan-container {
+        display: block !important;
+        height: auto !important;
+        padding-bottom: 76px; /* Ruang agar kartu paling bawah tidak ketutup tombol melayang */
+    }
+
+    .katalog-section {
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    .produk-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+        overflow: visible !important;
+        padding-right: 0 !important;
+    }
+
+    .produk-card {
+        padding: 10px !important;
+    }
+
+    .produk-card h4 {
+        font-size: 13px !important;
+        line-height: 1.3;
+    }
+
+    .stok-text {
+        margin-bottom: 10px !important;
+    }
+
+    .card-bottom {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 6px;
+    }
+
+    .harga-text {
+        font-size: 13px !important;
+    }
+
+    .btn-tambah {
+        width: 100%;
+        padding: 8px !important;
+        font-size: 12px !important;
+    }
+
+    /* Tombol Melayang Keranjang di Bawah */
+    .mobile-cart-bar {
+        display: flex !important;
+        position: fixed;
+        left: 68px; /* Sebelah kanan mini-sidebar */
+        right: 12px;
+        bottom: 12px;
+        z-index: 900;
+        background: #2563eb;
+        color: #fff;
+        padding: 12px 14px;
+        border-radius: 10px;
+        box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .mobile-cart-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        font-size: 13px;
+    }
+
+    .mobile-cart-badge {
+        font-size: 11px;
+        opacity: 0.9;
+    }
+
+    .mobile-cart-cta {
+        font-size: 13px;
+        font-weight: bold;
+        background: rgba(255, 255, 255, 0.18);
+        padding: 6px 10px;
+        border-radius: 6px;
+    }
+
+    /* Panel Keranjang berubah jadi Drawer Fullscreen saat diklik */
+    .keranjang-section {
+        display: none !important;
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100dvh !important;
+        z-index: 1200;
+        background: #fff;
+        padding: 16px !important;
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    .keranjang-section.mobile-show {
+        display: flex !important;
+    }
+
+    .mobile-cart-header {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .btn-close-cart {
+        background: #f3f4f6;
+        border: none;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 14px;
+        font-weight: bold;
+        color: #111;
+        cursor: pointer;
+    }
+
+    /* 4. HEADER AKSI & TABEL (STOK, RIWAYAT, PELANGGAN) */
+    .stok-header-action {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+    }
+
+    .stok-header-action input,
+    .stok-header-action select {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin-bottom: 0 !important;
+    }
+
+    .stok-header-action > div {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .stok-header-action > div > * {
+        flex: 1;
+        text-align: center;
+    }
+
+    .table-modern th,
+    .table-modern td {
+        padding: 10px 12px !important;
+        font-size: 13px !important;
+        white-space: nowrap;
+    }
+
+    /* 5. TAB PENGATURAN */
+    .pengaturan-layout {
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+
+    .pengaturan-menu {
+        width: 100% !important;
+        display: flex !important;
+        overflow-x: auto;
+        gap: 6px;
+        padding: 6px !important;
+    }
+
+    .set-menu-item {
+        flex: 1;
+        text-align: center;
+        white-space: nowrap;
+        font-size: 13px !important;
+        padding: 10px 8px !important;
+    }
+
+    /* 6. MODAL & LOGIN BOX */
+    .modal-box {
+        width: 92% !important;
+        max-width: 92% !important;
+        max-height: 85dvh !important;
+        overflow-y: auto !important;
+        padding: 18px !important;
+    }
+
+    .login-box {
+        width: 90% !important;
+        max-width: 360px !important;
+        padding: 24px 20px !important;
+    }
+}

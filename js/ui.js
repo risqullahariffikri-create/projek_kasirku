@@ -83,3 +83,49 @@ document.getElementById('btn-eksekusi-hapus')?.addEventListener('click', functio
     }
     tutupKonfirmasi();
 });
+
+// ==========================================
+// FUNGSI SIDEBAR COLLAPSIBLE & KERANJANG HP
+// ==========================================
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (!sidebar) return;
+
+    if (window.innerWidth <= 768) {
+        const isOpen = sidebar.classList.toggle('mobile-open');
+        if (backdrop) backdrop.classList.toggle('show', isOpen);
+    } else {
+        sidebar.classList.toggle('collapsed');
+    }
+}
+
+function tutupSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar) sidebar.classList.remove('mobile-open');
+    if (backdrop) backdrop.classList.remove('show');
+}
+
+function pilihMenu(tabId, title) {
+    switchTab(tabId, title);
+    tutupSidebar();
+}
+
+function toggleKeranjangMobile(buka) {
+    const panel = document.getElementById('keranjang-panel');
+    if (!panel) return;
+    if (buka) {
+        panel.classList.add('mobile-show');
+    } else {
+        panel.classList.remove('mobile-show');
+    }
+}
+
+// Bersihkan state overlay jika layar dibesarkan ke mode desktop
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+        tutupSidebar();
+        toggleKeranjangMobile(false);
+    }
+});

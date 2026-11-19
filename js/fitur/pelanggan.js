@@ -1,9 +1,10 @@
-// pelanggan.js
+// js/fitur/pelanggan.js
+
 let dataPelanggan = JSON.parse(localStorage.getItem('pos_pelanggan')) || [
     { id: 1, nama: "Andi Saputra", telp: "081299887766", motor: "Yamaha NMAX", plat: "B 6789 XYZ", alamat: "Jl. Margonda Raya, Depok" }
 ];
 
-let idPelangganDiedit = null; 
+let idPelangganDiedit = null;
 
 function simpanPelangganKeMemori() {
     localStorage.setItem('pos_pelanggan', JSON.stringify(dataPelanggan));
@@ -16,9 +17,8 @@ function bukaFormPelanggan() {
     idPelangganDiedit = null;
     document.getElementById('modal-pelanggan-title').innerText = "Tambah Pelanggan Baru";
     document.getElementById('btn-simpan-pel').innerText = "Simpan Pelanggan";
-    document.getElementById('btn-simpan-pel').style.background = "#2563eb"; 
-    
-    // Kosongkan input form
+    document.getElementById('btn-simpan-pel').style.background = "#2563eb";
+
     document.getElementById('pel-nama').value = '';
     document.getElementById('pel-telp').value = '';
     document.getElementById('pel-motor').value = '';
@@ -41,8 +41,8 @@ function renderPelanggan(keyword = '') {
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    const hasilCari = dataPelanggan.filter(p => 
-        p.nama.toLowerCase().includes(keyword.toLowerCase()) || 
+    const hasilCari = dataPelanggan.filter(p =>
+        p.nama.toLowerCase().includes(keyword.toLowerCase()) ||
         p.plat.toLowerCase().includes(keyword.toLowerCase())
     );
 
@@ -70,7 +70,6 @@ function renderPelanggan(keyword = '') {
         });
     }
 
-    // Refresh data sinkronisasi autocomplete di kasir
     if (typeof setupAutocompletePelanggan === 'function') setupAutocompletePelanggan();
 }
 
@@ -90,16 +89,24 @@ function tambahPelanggan() {
         const index = dataPelanggan.findIndex(p => p.id === idPelangganDiedit);
         if (index !== -1) {
             dataPelanggan[index] = { id: idPelangganDiedit, nama, telp, motor, plat, alamat };
+            // --> BAGIAN D (1a): Update pelanggan ke Firestore
+            if (typeof simpanDokumenFirestore === 'function') {
+                simpanDokumenFirestore('pos_pelanggan', dataPelanggan[index]);
+            }
         }
         alert('Data pelanggan berhasil diperbarui!');
     } else {
-        const newId = Date.now();
-        dataPelanggan.push({ id: newId, nama, telp, motor, plat, alamat });
+        const pelBaru = { id: Date.now(), nama, telp, motor, plat, alamat };
+        dataPelanggan.push(pelBaru);
+        // --> BAGIAN D (1b): Simpan pelanggan baru ke Firestore
+        if (typeof simpanDokumenFirestore === 'function') {
+            simpanDokumenFirestore('pos_pelanggan', pelBaru);
+        }
         alert('Data pelanggan bengkel berhasil ditambahkan!');
     }
 
-    simpanPelangganKeMemori(); 
-    tutupFormPelanggan(); 
+    simpanPelangganKeMemori();
+    tutupFormPelanggan();
     renderPelanggan();
 }
 
@@ -117,15 +124,19 @@ function editPelanggan(id) {
 
     document.getElementById('modal-pelanggan-title').innerText = "Edit Data Pelanggan";
     document.getElementById('btn-simpan-pel').innerText = "Update Pelanggan";
-    document.getElementById('btn-simpan-pel').style.background = "#16a34a"; 
-    
+    document.getElementById('btn-simpan-pel').style.background = "#16a34a";
+
     document.getElementById('modal-pelanggan').classList.add('show');
 }
 
 function hapusPelanggan(id) {
     tampilkanKonfirmasi('Yakin ingin menghapus data pelanggan ini?', function() {
         dataPelanggan = dataPelanggan.filter(p => p.id !== id);
-        simpanPelangganKeMemori(); 
+        simpanPelangganKeMemori();
+        // --> BAGIAN D (2): Hapus pelanggan dari Firestore
+        if (typeof hapusDokumenFirestore === 'function') {
+            hapusDokumenFirestore('pos_pelanggan', id);
+        }
         if (idPelangganDiedit === id) tutupFormPelanggan();
         renderPelanggan();
     });
@@ -138,7 +149,11 @@ document.getElementById('search-pelanggan')?.addEventListener('input', function(
 // ==========================================
 // FITUR AUTOCOMPLETE KUSTOM (KOTAK GELAP PENJUALAN)
 // ==========================================
+let autocompletePelangganTerpasang = false;
+
 function setupAutocompletePelanggan() {
+    if (autocompletePelangganTerpasang) return;
+
     const inputEl = document.getElementById('nama-pelanggan');
     const dropdownEl = document.getElementById('custom-dropdown-pelanggan');
     if (!inputEl || !dropdownEl) return;
@@ -146,22 +161,22 @@ function setupAutocompletePelanggan() {
     function renderList(keyword = '') {
         dropdownEl.innerHTML = '';
         let hasilCari = [{ nama: 'Umum', plat: '' }];
-        
-        const filterPelanggan = dataPelanggan.filter(p => 
-            p.nama.toLowerCase().includes(keyword.toLowerCase()) || 
+
+        const filterPelanggan = dataPelanggan.filter(p =>
+            p.nama.toLowerCase().includes(keyword.toLowerCase()) ||
             p.plat.toLowerCase().includes(keyword.toLowerCase())
         );
-        
+
         hasilCari = hasilCari.concat(filterPelanggan);
 
         hasilCari.forEach(p => {
             const div = document.createElement('div');
             div.className = 'custom-dropdown-item';
             div.innerText = p.plat ? `${p.nama} (${p.plat})` : p.nama;
-            
+
             div.onclick = function() {
-                inputEl.value = div.innerText; 
-                dropdownEl.style.display = 'none'; 
+                inputEl.value = div.innerText;
+                dropdownEl.style.display = 'none';
             };
             dropdownEl.appendChild(div);
         });
@@ -169,18 +184,16 @@ function setupAutocompletePelanggan() {
         dropdownEl.style.display = hasilCari.length > 0 ? 'block' : 'none';
     }
 
-    // Hindari duplikasi event listener dengan cloneNode jika di-refresh berulang kali
-    const newTarget = inputEl.cloneNode(true);
-    inputEl.parentNode.replaceChild(newTarget, inputEl);
-    
-    newTarget.addEventListener('input', function(e) { renderList(e.target.value); });
-    newTarget.addEventListener('focus', function(e) { renderList(e.target.value); });
-    
+    inputEl.addEventListener('input', function(e) { renderList(e.target.value); });
+    inputEl.addEventListener('focus', function(e) { renderList(e.target.value); });
+
     document.addEventListener('click', function(e) {
-        if (!newTarget.contains(e.target) && !dropdownEl.contains(e.target)) {
+        if (!inputEl.contains(e.target) && !dropdownEl.contains(e.target)) {
             dropdownEl.style.display = 'none';
         }
     });
+
+    autocompletePelangganTerpasang = true;
 }
 
 window.addEventListener('load', () => {
