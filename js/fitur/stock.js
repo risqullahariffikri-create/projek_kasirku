@@ -52,43 +52,62 @@ function importCSV(event) {
 
     const reader = new FileReader();
     reader.onload = function(e) {
-        const text = e.target.result.replace(/\r/g, '');
-        const baris = text.split('\n');
-        let jumlahBerhasil = 0;
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const namaSheetPertama = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[namaSheetPertama];
 
-        for (let i = 1; i < baris.length; i++) {
-            if (baris[i].trim() === '') continue;
+            // Ubah isi Excel/CSV menjadi array baris-kolom
+            const baris = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
 
-            let kolom = baris[i].split(',');
-            if (kolom.length < 3) kolom = baris[i].split(';');
+            let jumlahBerhasil = 0;
+            let maxId = dataStok.length > 0
+                ? Math.max(...dataStok.map(s => Number(s.id) || 0))
+                : 0;
 
-            if (kolom.length >= 3) {
-                const nama = kolom[0].trim();
-                const harga = parseInt(kolom[1].replace(/[^0-9]/g, ''));
-                const stok = parseInt(kolom[2].replace(/[^0-9]/g, ''));
+            for (let i = 0; i < baris.length; i++) {
+                const kolom = baris[i];
+                if (!kolom || kolom.length < 3) continue;
 
-                if (nama !== '' && !isNaN(harga) && !isNaN(stok)) {
-                    const newId = dataStok.length > 0 ? Math.max(...dataStok.map(s => Number(s.id))) + 1 : 1;
-                    const barangBaru = { id: newId, nama, harga, stok };
-                    dataStok.push(barangBaru);
-                    if (typeof simpanDokumenFirestore === 'function') {
-                        simpanDokumenFirestore('pos_stok', barangBaru);
-                    }
-                    jumlahBerhasil++;
+                const nama = String(kolom[0]).trim();
+                const harga = typeof kolom[1] === 'number'
+                    ? Math.round(kolom[1])
+                    : parseInt(String(kolom[1]).replace(/[^0-9]/g, ''), 10);
+                const stok = typeof kolom[2] === 'number'
+                    ? Math.round(kolom[2])
+                    : parseInt(String(kolom[2]).replace(/[^0-9]/g, ''), 10);
+
+                // Lewati baris header judul kolom (misal: "Nama Barang | Harga | Stok") atau baris kosong
+                if (!nama || isNaN(harga) || isNaN(stok)) continue;
+
+                maxId++;
+                const barangBaru = { id: maxId, nama, harga, stok };
+                dataStok.push(barangBaru);
+
+                if (typeof simpanDokumenFirestore === 'function') {
+                    simpanDokumenFirestore('pos_stok', barangBaru);
                 }
+                jumlahBerhasil++;
             }
+
+            if (jumlahBerhasil > 0) {
+                simpanStokKeMemori();
+                renderStok();
+                alert(`Sukses! ${jumlahBerhasil} barang berhasil di-import ke database.`);
+            } else {
+                alert("Gagal mengimpor. Pastikan file memiliki 3 kolom berurutan: Nama Barang, Harga, dan Stok.");
+            }
+        } catch (err) {
+            console.error("Error import file:", err);
+            alert("Format file tidak valid. Gunakan file Excel (.xlsx / .xls) atau .csv.");
         }
 
-        if (jumlahBerhasil > 0) {
-            simpanStokKeMemori();
-            renderStok();
-            alert(`Sukses! ${jumlahBerhasil} barang baru berhasil di-import.`);
-        } else {
-            alert("Gagal mengimpor. Pastikan baris data memiliki 3 kolom: Nama Barang, Harga, dan Stok.");
-        }
         event.target.value = '';
     };
-    reader.readAsText(file);
+
+    // Baca sebagai ArrayBuffer (bukan readAsText) agar bebas bahasa alien
+    reader.readAsArrayBuffer(file);
 }
 
 function bukaFormStok() {
